@@ -1,0 +1,318 @@
+<!--header.php-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSAAM</title>
+    <!--Bootstrap 5.1-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous">
+    <!--Font Awesome 5-->
+    <script src="https://kit.fontawesome.com/ad0b88e4da.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a href="index.php" class="navbar-brand"><img src=\img\LogoAN.png height="40">  Sistema de Seguimiento de Actualización de Anotaciones Marginales SSAAM</a> <!--nombre y sello-->
+        </div>
+    </nav>
+
+
+<!--footer.php-->
+    <!--Scripts-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+</body>
+</html>
+
+
+<!--db.php-->
+<?php
+    session_start();
+    $conn = mysqli_connect(
+        'localhost',    //dirección de la bd
+        'root',         //usuario
+        '',             //pw
+        'ssaam_bd'      //nombre de la bd
+    );
+    /*
+    if(isset($conn)){
+        echo "ssaam_bd conectada";
+    }
+    */
+?>
+
+
+<!--index.php-->
+<?php include ("db.php"); ?>
+
+<?php include ("includes/header.php"); ?>
+
+<div class="container p-4">
+
+    <div class="row">
+
+        <div class="col-md-4">
+
+            <?php if(isset($_SESSION['message'])) {?>
+                <!--botón de alerta desde bootstrap-->
+                <div class="alert alert-<?=$_SESSION['message_type'];?> alert-dismissible fade show" role="alert">
+                    <?= $_SESSION['message']    ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+            <?php session_unset(); } ?> <!--esto borra TODAS las variables de la sesión, usada para no mostrar el mensaje de grabación exitosa-->
+
+            <div class="card card-body">
+                <form action="salvar_SAM.php" method="POST">
+                    <div class="form-group">
+                        <input type="text" name="oficio" class="form-control"
+                        placeholder="Id.Oficio" autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" name="inscripcion" class="form-control"
+                        placeholder="Inscripción: CCCLLLAAAAVVVVIIIII" autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <textarea name="tenor" maxlength="255" rows="2" class="form-control"
+                         placeholder="Ingrese el tenor del oficio" required></textarea>
+                    </div>
+
+                    <input type="submit" class="btn btn-success btn-block" 
+                     name="Guardar_Oficio" value="Guardar Oficio-Inscripción">
+                </form>
+            </div>
+
+        </div>
+
+        <div class="col-md-8">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Oficio</th>
+                        <th>Inscripción</th>
+                        <th>Ingreso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                        $query = "SELECT * FROM sam";
+                        $result_sams = mysqli_query($conn, $query);
+
+                        while($row = mysqli_fetch_array($result_sams)) { ?>
+                            <tr>
+                                <td><?php echo $row['IdOficio'] ?></td>
+                                <td><?php echo $row['IdInscripcion'] ?></td>
+                                <td><?php echo $row['Ingreso'] ?></td>
+                                <td>
+                                    <a href="editar_SAM.php?id=<?php echo $row['id']?>" class="btn btn-secondary">
+                                    <i class="fas fa-marker"></i>
+                                    </a>
+                                    <a href="borrar_SAM.php?id=<?php echo $row['id']?>" class="btn btn-danger">
+                                        <i class= "fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+
+                    <?php } ?>
+
+
+                </tbody>    
+        </div>
+    </div>
+
+</div>
+
+<?php include ("includes/footer.php"); ?>
+
+
+
+<!--salvar_SAM.php-->
+<?php
+include("db.php");
+if (isset($_POST['Guardar_Oficio'])){   //Si existe comunicación desde un formulario llamado Guardar_Oficio via POST
+    $oficio = $_POST['oficio'];         //reciba los valores
+    $inscripcion = $_POST['inscripcion'];
+    $tenor = $_POST['tenor'];
+                                        //construya la consulta a la BD
+    $query = "INSERT INTO sam (IdOficio, IdInscripcion, Tenor)
+     VALUES ('$oficio', '$inscripcion', '$tenor')";
+
+    $resultado = mysqli_query($conn, $query);   //ejecuta la consulta 
+
+    $_SESSION['message'] = 'Oficio guardado exitosamente.'; //guarda mensajes en la sesión
+    $_SESSION['message_type'] = 'success';
+
+    header("location: index.php");      //vuelve a ejecutar la página index
+
+}
+?>
+
+
+<!--borrar_SAM.php-->
+<?php
+include ("db.php");
+if (isset($_GET['id'])) {
+
+    $id = $_GET['id'];
+
+    $query = "DELETE FROM sam WHERE id = $id";
+    $resultado=mysqli_query($conn, $query);
+
+    $_SESSION['message'] = "Oficio borrado exitosamente";
+    $_SESSION['message_type'] = 'danger';
+
+    header ("location: index.php");
+}
+?>
+
+
+<!--editar_SAM.php-->
+<?php
+include("db.php");
+
+if(isset($_GET['id'])){
+    $id = $_GET['id'];
+    $query = "SELECT * FROM sam WHERE id = $id";
+    $resultado = mysqli_query($conn, $query);
+    if (mysqli_num_rows($resultado)==1){
+        $fila = mysqli_fetch_array($resultado);
+        $oficio = $fila['IdOficio'];
+        $inscripcion = $fila['IdInscripcion'];
+        $tenor = $fila['Tenor'];
+    }
+}
+
+if(isset($_POST['Guardar_Actualizacion'])){
+    $id = $_GET['id'];
+    $oficio = $_POST['oficio'];
+    $inscripcion = $_POST['inscripcion'];
+    $tenor = $_POST['tenor'];
+
+    $query = "UPDATE sam set IdOficio='$oficio', IdInscripcion='$inscripcion', Tenor='$tenor' WHERE id = $id";
+    $resultado = mysqli_query($conn, $query);
+
+    $_SESSION['message'] = 'Actualizado exitosamente.';
+    $_SESSION['message_type'] = 'warning';
+
+    header("location: index.php");
+}
+?>
+
+<?php include("includes/header.php"); ?>
+
+<div class="container p-4">
+    <div class="row">
+        <div class="col-md-4 mx-auto">
+            <div class="card card-body">
+                <form action="editar_SAM.php?id=<?php echo $_GET['id']; ?>" method='POST'>
+                    <div class="form-group">
+                        <input type="text" name="oficio" value="<?php echo $oficio; ?>"
+                        class="form-control" placeholder="Modifique oficio">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="inscripcion" value="<?php echo $inscripcion; ?>"
+                        class="form-control" placeholder="Modifique inscripcion">
+                    </div>
+                    <div class="form-group">
+                        <textarea name="tenor" maxlength="255" rows="2" class="form-control"
+                         placeholder="Modifique el tenor del oficio" required><?php echo $tenor; ?></textarea>
+                    </div>
+                    <button class="btn btn-success btn-block" name="Guardar_Actualizacion">
+                        Guardar Actualización
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<?php include("includes/footer.php"); ?>
+
+
+<!--ssaam_bd.sql-->
+-- phpMyAdmin SQL Dump
+-- version 5.1.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 25-01-2022 a las 02:05:30
+-- Versión del servidor: 10.4.22-MariaDB
+-- Versión de PHP: 8.1.1
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de datos: `ssaam_bd`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sam`
+--
+
+CREATE TABLE `sam` (
+  `id` int(11) NOT NULL,
+  `IdOficio` varchar(50) NOT NULL,
+  `IdInscripcion` varchar(20) NOT NULL,
+  `Tenor` varchar(255) NOT NULL,
+  `Ingreso` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Volcado de datos para la tabla `sam`
+--
+
+INSERT INTO `sam` (`id`, `IdOficio`, `IdInscripcion`, `Tenor`, `Ingreso`) VALUES
+(5, 'S-98450982534', 'RC1SER193559912345', 'oiuwroiuweoiuweoriuweoriuppp', '2022-01-22 17:16:20'),
+(7, 'T86868686868686', 'CC1COP1935044400145', 'Traspasados los derechos de fulano a fulana según inscripción 333 del 23ago1964.', '2022-01-23 03:09:42'),
+(8, 'S456789J', 'CC1COP1901023400345', 'Traspasados los derechos según inscripción 981 del 24dic2021.', '2022-01-24 01:57:21'),
+(9, 'C39876123', 'RC3SER1940025400237', 'Prohibición de gravar o enajenar según inscripción 665 del 18octubre2020.', '2022-01-24 02:00:25'),
+(10, 'V-87634567', 'CM1VAL1937015100089', 'Traspasa derechos mineros sobre placer aurífero según contrato en inscr.855 del 12feb2019. ', '2022-01-24 02:06:01');
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `sam`
+--
+ALTER TABLE `sam`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `sam`
+--
+ALTER TABLE `sam`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
